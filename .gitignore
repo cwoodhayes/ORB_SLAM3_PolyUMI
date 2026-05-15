@@ -37,6 +37,8 @@ Examples/Monocular-Inertial/export_map_from_atlas
 Examples/Monocular-Inertial/gopro_slam
 Examples/Monocular-Inertial/mono_inertial_gopro_localize
 Examples/Monocular-Inertial/mono_inertial_gopro_vi
+Examples/Monocular-Inertial/mono_inertial_gopro_vi_polyumi
+Examples/Monocular-Inertial/mono_inertial_gopro_vi_localize
 
 Examples/Stereo-Inertial/stereo_inertial_euroc
 Examples/Stereo-Inertial/stereo_inertial_tum_vi

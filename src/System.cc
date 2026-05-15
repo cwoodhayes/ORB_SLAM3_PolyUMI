@@ -92,6 +92,21 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mStrLoadAtlasFromFile = load_atlas_path;
     mStrSaveAtlasToFile = save_atlas_path;
 
+    // Fallback to YAML keys when the constructor args are empty so legacy
+    // example binaries that inject System.LoadAtlasFromFile / SaveAtlasToFile
+    // into the settings file (PolyUMI's mono_inertial_gopro_vi* binaries)
+    // continue to work without code changes.
+    if(mStrLoadAtlasFromFile.empty()) {
+        cv::FileNode load_node = fsSettings["System.LoadAtlasFromFile"];
+        if(!load_node.empty() && load_node.isString())
+            mStrLoadAtlasFromFile = (string)load_node;
+    }
+    if(mStrSaveAtlasToFile.empty()) {
+        cv::FileNode save_node = fsSettings["System.SaveAtlasToFile"];
+        if(!save_node.empty() && save_node.isString())
+            mStrSaveAtlasToFile = (string)save_node;
+    }
+
     // loop closing setting
     node = fsSettings["loopClosing"];
     bool activeLC = true;

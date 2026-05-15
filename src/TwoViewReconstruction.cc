@@ -815,6 +815,11 @@ namespace ORB_SLAM3
         {
             T21 = Sophus::SE3f(vR[bestSolutionIdx], vt[bestSolutionIdx]);
             vbTriangulated = bestTriangulated;
+            // Original ORB-SLAM3 forgets to assign vP3D here (ReconstructF does
+            // set vP3D = vP3DN on its success path). When the homography path
+            // wins, Tracking::CreateInitialMapMonocular indexes mvIniP3D[i]
+            // OOB → SIGSEGV at the very first KF.
+            vP3D = bestP3D;
 
             return true;
         }
