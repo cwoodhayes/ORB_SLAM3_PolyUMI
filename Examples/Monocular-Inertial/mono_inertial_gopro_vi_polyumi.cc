@@ -49,7 +49,10 @@ int main(int argc, char **argv) {
 
   vector<double> imuTimestamps;
   vector<cv::Point3f> vAcc, vGyr;
-  LoadTelemetry(argv[4], imuTimestamps, vAcc, vGyr);
+  if (!LoadTelemetry(argv[4], imuTimestamps, vAcc, vGyr)) {
+    cerr << "Failed to load telemetry from: " << argv[4] << endl;
+    return 1;
+  }
 
   // open settings to get image resolution
   cv::FileStorage fsSettings(argv[2], cv::FileStorage::READ);
@@ -65,8 +68,6 @@ int main(int argc, char **argv) {
   }
   fsSettings.release();
 
-  // Retrieve paths to images
-  vector<double> vTimestamps;
   // Create SLAM system. It initializes all system threads and gets ready to
   // process frames.
   ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::IMU_MONOCULAR, bUseViewer);
@@ -108,7 +109,7 @@ int main(int argc, char **argv) {
       // gather imu measurements between frames
       // Load imu measurements from previous frame
       vImuMeas.clear();
-      while(imuTimestamps[last_imu_idx] <= tframe && tframe > 0)
+      while(last_imu_idx < imuTimestamps.size() && imuTimestamps[last_imu_idx] <= tframe && tframe > 0)
       {
           vImuMeas.push_back(ORB_SLAM3::IMU::Point(vAcc[last_imu_idx].x,vAcc[last_imu_idx].y,vAcc[last_imu_idx].z,
                                                    vGyr[last_imu_idx].x,vGyr[last_imu_idx].y,vGyr[last_imu_idx].z,
@@ -160,14 +161,14 @@ int main(int argc, char **argv) {
   SLAM.Shutdown();
 
   // Tracking time statistics
-  sort(vTimesTrack.begin(), vTimesTrack.end());
-  float totaltime = 0;
-  for (auto ni = 0; ni < vTimestamps.size(); ni++) {
-    totaltime += vTimesTrack[ni];
+  if (!vTimesTrack.empty()) {
+    sort(vTimesTrack.begin(), vTimesTrack.end());
+    float totaltime = 0;
+    for (float t : vTimesTrack) totaltime += t;
+    cout << "-------" << endl << endl;
+    cout << "median tracking time: " << vTimesTrack[vTimesTrack.size() / 2] << endl;
+    cout << "mean tracking time: " << totaltime / vTimesTrack.size() << endl;
   }
-  cout << "-------" << endl << endl;
-  cout << "median tracking time: " << vTimesTrack[nImages / 2] << endl;
-  cout << "mean tracking time: " << totaltime / nImages << endl;
 
   // Save camera trajectory
   SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
