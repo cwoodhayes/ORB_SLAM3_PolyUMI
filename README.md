@@ -1,4 +1,8 @@
 # ORB-SLAM3
+### PolyUMI Fork Notes:
+- Added new localization & mapping executables in `Examples/Monocular-Inertial`
+- Added calibration file for GoPro Hero 12 + Max Lens Mod 2.0, created using [OpenIMUCameraCalibrator](https://github.com/urbste/OpenImuCameraCalibrator)
+- Fixed a few crash-causing bugs in the library itself
 
 ### V1.0, December 22th, 2021
 **Authors:** Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, [José M. M. Montiel](http://webdiis.unizar.es/~josemari/), [Juan D. Tardos](http://webdiis.unizar.es/~jdtardos/).

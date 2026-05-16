@@ -141,3 +141,14 @@ target_link_libraries(mono_inertial_gopro_localize ${PROJECT_NAME})
 add_executable(gopro_slam
 Examples/Monocular-Inertial/gopro_slam.cc)
 target_link_libraries(gopro_slam ${PROJECT_NAME})
+
+# PolyUMI binaries: kept under their own names to drive a slightly different
+# CLI (positional args, optional trajectory output, YAML-driven viewer flag)
+# from slam_step.py without clashing with the Cheng-fork example binaries.
+add_executable(mono_inertial_gopro_vi_polyumi
+Examples/Monocular-Inertial/mono_inertial_gopro_vi_polyumi.cc)
+target_link_libraries(mono_inertial_gopro_vi_polyumi ${PROJECT_NAME})
+
+add_executable(mono_inertial_gopro_vi_localize
+Examples/Monocular-Inertial/mono_inertial_gopro_vi_localize.cc)
+target_link_libraries(mono_inertial_gopro_vi_localize ${PROJECT_NAME})
