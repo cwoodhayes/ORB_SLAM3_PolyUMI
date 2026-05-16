@@ -2,10 +2,6 @@
 
 # GoPro Hero 12 — ORB-SLAM3 Monocular-Inertial settings (fisheye / MaxLens profile)
 #
-# OPEN QUESTION: All values marked CALIBRATE_ME require a calibration run using a tool
-# such as Kalibr or OpenImuCameraCalibrator (https://github.com/urbste/OpenImuCameraCalibrator).
-# The step will refuse to run until every CALIBRATE_ME value is replaced with a real number.
-#
 # Calibration checklist:
 #   1. Camera intrinsics (fx, fy, cx, cy, xi, alpha): use a checkerboard with the
 #      MaxLens/fisheye profile at the same resolution you will record episodes.
@@ -14,12 +10,12 @@
 #   3. IMU noise parameters: record a static IMU log for ~2 h and use the Allan
 #      deviation to extract NoiseGyro, NoiseAcc, GyroWalk, AccWalk.
 #
-# Hero 12 ships with a 200 Hz IMU and supports MaxLens Mod 2.0 (~177° DFOV fisheye).
-# Use the DoubleSphere camera model (xi + alpha parameters), same as GoPro 9 MaxLens.
+# Hero 12 ships with a 200 Hz IMU and we use it with the MaxLens Mod 2.0 (~177° DFOV fisheye).
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters
 #--------------------------------------------------------------------------------------------
+# We use KannalaBrandt8, which is the default fisheye model in OpenImuCameraCalibrator.
 Camera.type: "KannalaBrandt8"
 
 # Focal lengths and principal point in pixels.
@@ -54,9 +50,7 @@ Camera.RGB: 1
 #--------------------------------------------------------------------------------------------
 # Transformation from camera frame to IMU body frame (T_body_camera = Tbc).
 # Rows: body x, y, z, 1  expressed in camera-frame columns.
-# Calibrate with Kalibr or OpenImuCameraCalibrator.
-# The GoPro 9 MaxLens values below are included only as a rough structural reference —
-# Hero 12 intrinsics and the MaxLens Mod 2.0 geometry differ; do not use them in production.
+# Calibrate with OpenImuCameraCalibrator.
 # Source: cam_imu_calib_result_GX010154.json (q_i_c + t_i_c), reproj error 1.84 px.
 Tbc: !!opencv-matrix
    rows: 4

@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
   // open settings to get image resolution
   cv::FileStorage fsSettings(argv[2], cv::FileStorage::READ);
   if(!fsSettings.isOpened()) {
-     cerr << "Failed to open settings file at: " << argv[2] << endl;
-     exit(-1);
+    cerr << "Failed to open settings file at: " << argv[2] << endl;
+    return 1;
   }
   cv::Size img_size(fsSettings["Camera.width"],fsSettings["Camera.height"]);
   bool bUseViewer = true;
@@ -84,7 +84,6 @@ int main(int argc, char **argv) {
   // Main loop
   int cnt_empty_frame = 0;
   int img_id = 0;
-  int nImages = cap.get(cv::CAP_PROP_FRAME_COUNT);
   double fps = cap.get(cv::CAP_PROP_FPS);
   double frame_diff_s = 1./fps;
   std::vector<ORB_SLAM3::IMU::Point> vImuMeas;
@@ -118,28 +117,10 @@ int main(int argc, char **argv) {
       }
 
 
-#ifdef COMPILEDWITHC14
-      std::chrono::steady_clock::time_point t1 =
-          std::chrono::steady_clock::now();
-#else
-      std::chrono::monotonic_clock::time_point t1 =
-          std::chrono::monotonic_clock::now();
-#endif
-
-      // Pass the image to the SLAM system
+      auto t1 = std::chrono::steady_clock::now();
       SLAM.TrackMonocular(im_track, tframe, vImuMeas);
-
-#ifdef COMPILEDWITHC14
-      std::chrono::steady_clock::time_point t2 =
-          std::chrono::steady_clock::now();
-#else
-      std::chrono::monotonic_clock::time_point t2 =
-          std::chrono::monotonic_clock::now();
-#endif
-
-      double ttrack =
-          std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
-              .count();
+      auto t2 = std::chrono::steady_clock::now();
+      double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
 
       if (img_id % 100 == 0) {
         std::cout<<"Video FPS: "<<1./frame_diff_s<<"\n";

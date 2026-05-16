@@ -88,7 +88,6 @@ int main(int argc, char **argv) {
   size_t last_imu_idx = 0;
   int cnt_empty_frame = 0;
   int img_id = 0;
-  int nImages = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_COUNT));
   double fps = cap.get(cv::CAP_PROP_FPS);
   double frame_diff_s = 1. / fps;
 
