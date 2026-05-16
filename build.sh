@@ -26,9 +26,12 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF
 make -j
 
-# Thirdparty/Pangolin is an empty submodule in this fork; the project's
-# top-level slam/Pangolin (already built for the other ORB_SLAM3) is used
-# instead via CMAKE_PREFIX_PATH below.
+cd ../../Pangolin
+echo "Configuring and building Thirdparty/Pangolin ..."
+mkdir -p build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF
+make -j
 
 cd ../../../
 
@@ -42,8 +45,8 @@ echo "Configuring and building ORB_SLAM3 ..."
 
 mkdir build
 cd build
-# Point find_package(Pangolin) at the project-wide Pangolin build that lives
-# alongside this fork (slam/Pangolin/build), since Thirdparty/Pangolin is empty.
+# Point find_package(Pangolin) at the in-tree Pangolin build we just produced
+# above (Thirdparty/Pangolin/build hosts PangolinConfig.cmake).
 cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    -DCMAKE_PREFIX_PATH="$(cd ../../Pangolin/build && pwd)"
+    -DCMAKE_PREFIX_PATH="$(cd ../Thirdparty/Pangolin/build && pwd)"
 make -j
