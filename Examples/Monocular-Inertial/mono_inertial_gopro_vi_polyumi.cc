@@ -72,6 +72,10 @@ int main(int argc, char **argv) {
   // process frames.
   ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::IMU_MONOCULAR, bUseViewer);
 
+  // System ctor unconditionally clamps to QUIET; un-mute so IMU-init and
+  // relocalization diagnostics reach our logs.
+  ORB_SLAM3::Verbose::SetTh(ORB_SLAM3::Verbose::VERBOSITY_NORMAL);
+
   // Vector for tracking time statistics
   vector<float> vTimesTrack;
   cv::VideoCapture cap(argv[3]);
@@ -140,6 +144,13 @@ int main(int argc, char **argv) {
 
   // Stop all threads
   SLAM.Shutdown();
+
+  // NOTE: do not call PrintLoadedAtlasState here. Shutdown() returns before
+  // LocalMapping/LoopClosing fully release their map mutexes (the stdout still
+  // prints "mpLocalMapper is not finished" / "mpLoopCloser is not finished"),
+  // and our diagnostic acquires Atlas + Map locks, which deadlocks.  The
+  // localizer logs the loaded state instead, which is what we actually need
+  // to debug relocalization.
 
   // Tracking time statistics
   if (!vTimesTrack.empty()) {

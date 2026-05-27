@@ -200,6 +200,11 @@ public:
     float GetImageScale();
     bool isLoadingMap();
 
+    // Dump active-map / IMU-init state to stdout. Used by the PolyUMI
+    // example binaries to confirm what the atlas carries after LoadAtlas
+    // and what the map-builder achieves before SaveAtlas.
+    void PrintLoadedAtlasState(const std::string &label);
+
 private:
 
     void SaveAtlas(int type);

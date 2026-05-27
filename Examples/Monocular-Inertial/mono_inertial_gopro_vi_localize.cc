@@ -74,8 +74,17 @@ int main(int argc, char **argv) {
   // needed (vanilla ORB-SLAM3 needs one because it leaves CreateNewMap() live
   // after the load, making a fresh empty map the active one).
 
+  // The System ctor unconditionally clamps verbosity to QUIET at the end,
+  // which silences relocalization / lost-state / IMU-init messages we need
+  // for debugging localization failures.  Re-enable them.
+  ORB_SLAM3::Verbose::SetTh(ORB_SLAM3::Verbose::VERBOSITY_NORMAL);
+
   // Tracking-only: don't grow the loaded map. Must come after construction.
   SLAM.ActivateLocalizationMode();
+
+  // Report the loaded-atlas state up-front so we can tell whether the map we
+  // are localizing against carried IMU initialization forward from mapping.
+  SLAM.PrintLoadedAtlasState("[localizer] post-load");
 
   cv::VideoCapture cap(argv[3]);
   if (!cap.isOpened()) {
