@@ -257,6 +257,12 @@ Map* Atlas::GetCurrentMap()
     return mpCurrentMap;
 }
 
+long int Atlas::GetCurrentMapId()
+{
+    unique_lock<mutex> lock(mMutexAtlas);
+    return mpCurrentMap ? (long int)mpCurrentMap->GetId() : -1L;
+}
+
 void Atlas::SetMapBad(Map* pMap)
 {
     mspMaps.erase(pMap);
