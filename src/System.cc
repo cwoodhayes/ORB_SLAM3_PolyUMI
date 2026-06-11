@@ -1722,14 +1722,13 @@ void System::PrintLoadedAtlasState(const std::string &label)
         return;
     }
     std::vector<Map*> vpMaps = mpAtlas->GetAllMaps();
-    Map* pCurrent = mpAtlas->GetCurrentMap();
     cout << "  maps=" << vpMaps.size()
-         << " current_map_id=" << (pCurrent ? (long)pCurrent->GetId() : -1L) << endl;
+         << " current_map_id=" << mpAtlas->GetCurrentMapId() << endl;
     for(Map* pMi : vpMaps) {
         if(!pMi) continue;
         cout << "  map " << pMi->GetId()
-             << ": kfs=" << pMi->GetAllKeyFrames().size()
-             << " mps=" << pMi->GetAllMapPoints().size()
+             << ": kfs=" << pMi->KeyFramesInMap()
+             << " mps=" << pMi->MapPointsInMap()
              << " inertial=" << pMi->IsInertial()
              << " imu_init=" << pMi->isImuInitialized()
              << " imu_ba1=" << pMi->GetIniertialBA1()

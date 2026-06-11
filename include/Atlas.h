@@ -115,6 +115,10 @@ public:
 
     Map* GetCurrentMap();
 
+    // Like GetCurrentMap(), but never creates a new map as a side effect.
+    // Returns -1 if no map is currently active.
+    long int GetCurrentMapId();
+
     void SetMapBad(Map* pMap);
     void RemoveBadMaps();
 
