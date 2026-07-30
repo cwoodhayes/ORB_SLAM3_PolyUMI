@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 
@@ -135,6 +136,21 @@ int main(int argc, char **argv) {
   cv::Size img_size(fsSettings["Camera.width"], fsSettings["Camera.height"]);
   fsSettings.release();
 
+  // Optional temporal decimation, for tuning experiments only: keep every Nth
+  // decoded frame (1 = every frame = production behaviour).  Env var rather than
+  // a CLI arg so the argv contract stays as documented above and an unset
+  // environment is bit-identical to the pre-existing code path.  Note the
+  // settings YAML's Camera.fps should be divided by the same N when using this,
+  // since ORB-SLAM3 derives its keyframe-insertion window (mMaxFrames) from it.
+  int frame_stride = 1;
+  if (const char *env_stride = std::getenv("POLYUMI_SLAM_FRAME_STRIDE")) {
+    const int parsed = std::atoi(env_stride);
+    if (parsed > 0) frame_stride = parsed;
+    else
+      cerr << "Ignoring invalid POLYUMI_SLAM_FRAME_STRIDE=" << env_stride
+           << " (want a positive integer)" << endl;
+  }
+
   // Decode + resize every frame once, up front, so the optional reverse pass
   // reuses the buffer instead of re-decoding (or paying an ffmpeg re-encode).
   // Frames are stored at tracking resolution (img_size), bounding the memory.
@@ -146,9 +162,12 @@ int main(int argc, char **argv) {
       cerr << "Error opening video stream or file: " << argv[3] << endl;
       return 1;
     }
-    // Fallback frame spacing for sanitizing bad timestamps (see below).
+    // Fallback frame spacing for sanitizing bad timestamps (see below).  Scaled
+    // by the stride because it extrapolates between *kept* frames, which sit
+    // frame_stride source frames apart.
     double fps = cap.get(cv::CAP_PROP_FPS);
-    const double dt_fallback = (fps > 1e-6) ? (1.0 / fps) : (1.0 / 60.0);
+    const double dt_fallback =
+        ((fps > 1e-6) ? (1.0 / fps) : (1.0 / 60.0)) * frame_stride;
     int cnt_empty_frame = 0;
     int n_fixed_ts = 0;
     while (true) {
@@ -173,11 +192,20 @@ int main(int argc, char **argv) {
       cv::resize(im, resized, img_size);
       frames.push_back(std::move(resized));
       frameTimes.push_back(tframe);
+      // Advance past the frames we're dropping.  grab() still decodes (HEVC
+      // inter-frame deps demand it) but skips retrieve()'s colour conversion
+      // and Mat copy, so a stride > 1 is cheaper than decoding everything.
+      for (int s = 1; s < frame_stride; ++s) {
+        if (!cap.grab()) break;
+      }
     }
     if (n_fixed_ts > 0)
       cout << "Repaired " << n_fixed_ts
            << " non-monotonic frame timestamp(s) via " << dt_fallback
            << "s fallback spacing" << endl;
+    if (frame_stride != 1)
+      cout << "Frame stride " << frame_stride << ": kept " << frames.size()
+           << " of every " << frame_stride << "th source frame" << endl;
   }
   if (frames.size() < 2) {
     cerr << "Decoded fewer than 2 frames from " << argv[3] << endl;
