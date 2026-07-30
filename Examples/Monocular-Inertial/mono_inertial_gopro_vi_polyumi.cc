@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 
@@ -85,11 +86,32 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  // Optional temporal decimation, matching mono_inertial_gopro_vi_localize's
+  // POLYUMI_SLAM_FRAME_STRIDE: keep every Nth frame (1 = every frame = the
+  // original behaviour, bit-identical when the variable is unset).  Divide
+  // Camera.fps in the settings YAML by the same N, since ORB-SLAM3 derives its
+  // keyframe-insertion window (mMaxFrames) from it.
+  int frame_stride = 1;
+  if (const char *env_stride = std::getenv("POLYUMI_SLAM_FRAME_STRIDE")) {
+    const int parsed = std::atoi(env_stride);
+    if (parsed > 0) frame_stride = parsed;
+    else
+      cerr << "Ignoring invalid POLYUMI_SLAM_FRAME_STRIDE=" << env_stride
+           << " (want a positive integer)" << endl;
+  }
+
   // Main loop
   int cnt_empty_frame = 0;
   int img_id = 0;
   double fps = cap.get(cv::CAP_PROP_FPS);
-  double frame_diff_s = 1./fps;
+  // Spacing between the frames we actually feed, not between source frames --
+  // this paces the loop against wall clock below, and decimating widens the
+  // real interval by the stride.  Getting this wrong would under-sleep and
+  // starve LocalMapping of the background time the throttle exists to give it.
+  double frame_diff_s = frame_stride / fps;
+  if (frame_stride != 1)
+    std::cout << "Frame stride " << frame_stride << ": feeding every " << frame_stride
+              << "th frame (effective " << (fps / frame_stride) << " fps)\n";
   std::vector<ORB_SLAM3::IMU::Point> vImuMeas;
   size_t last_imu_idx = 0;
   while (1) {
@@ -135,6 +157,13 @@ int main(int argc, char **argv) {
       // Wait to load the next frame
       if (ttrack < frame_diff_s)
         usleep((frame_diff_s - ttrack) * 1e6);
+
+      // Advance past the frames we're dropping.  grab() still decodes (HEVC
+      // inter-frame deps demand it) but skips retrieve()'s colour conversion
+      // and Mat copy.
+      for (int s = 1; s < frame_stride; ++s) {
+        if (!cap.grab()) break;
+      }
   }
 
   if (bUseViewer) {
