@@ -79,7 +79,7 @@ IMU.Frequency: 200
 #--------------------------------------------------------------------------------------------
 # ORB Extractor Parameters
 #--------------------------------------------------------------------------------------------
-ORBextractor.nFeatures: 1500
+ORBextractor.nFeatures: 2500
 ORBextractor.scaleFactor: 1.2
 ORBextractor.nLevels: 8
 ORBextractor.iniThFAST: 20
