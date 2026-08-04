@@ -99,7 +99,12 @@ static void RunLocalizationPass(const char *vocab, const char *settings,
 
   SLAM.Shutdown();
   cout << "Saving trajectory to: " << traj_out << endl;
-  SLAM.SaveTrajectoryEuRoC(traj_out);
+  // CSV, not EuRoC: SaveTrajectoryEuRoC's inertial branch composes mImuCalib.mTbc and so
+  // reports the *IMU body* pose, while SaveTrajectoryCSV reports the camera pose in the
+  // optical frame -- which is the frame the policy's observations live in, and the one
+  // upstream UMI trains against. The CSV also carries frame_idx and an explicit is_lost
+  // column, so the Python side can index rows directly instead of matching timestamps.
+  SLAM.SaveTrajectoryCSV(traj_out);
 }
 
 int main(int argc, char **argv) {

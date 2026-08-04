@@ -196,7 +196,8 @@ int main(int argc, char **argv) {
 
   if (argc == 6) {
     cout << "Saving EuRoC trajectory to: " << argv[5] << endl;
-    SLAM.SaveTrajectoryEuRoC(argv[5]);
+    // Camera-frame CSV, matching the localizer -- see mono_inertial_gopro_vi_localize.cc.
+    SLAM.SaveTrajectoryCSV(argv[5]);
   }
 
   return 0;
