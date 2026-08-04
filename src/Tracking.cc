@@ -1996,11 +1996,22 @@ void Tracking::Track()
     }
     else
     {
-        // This can happen if tracking is lost
+        // This can happen if tracking is lost, and also when mState is still OK but the
+        // frame never got a pose set (mCurrentFrame.isSet() false) -- typically the frame
+        // right after initialization/relocalization. Either way this branch has no pose of
+        // its own and republishes the *previous* frame's pose and timestamp.
+        //
+        // So push true, not is_lost: `mlbLost` means "this row carries no pose of its own",
+        // which is what every consumer of it needs to know. Pushing is_lost here labelled
+        // the OK-but-unset case as tracked while its pose and timestamp were duplicates of
+        // the row before, which reads downstream as a real pose at a repeated timestamp.
+        // PolyUMI's slam_step.py indexes trajectory rows directly and cross-checks each
+        // tracked row's timestamp against its frame, so those rows tripped the check and
+        // failed the whole episode.
         mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
         mlpReferences.push_back(mlpReferences.back());
         mlFrameTimes.push_back(mlFrameTimes.back());
-        mlbLost.push_back(is_lost);
+        mlbLost.push_back(true);
         mlState.push_back(mState);
     }
 }
