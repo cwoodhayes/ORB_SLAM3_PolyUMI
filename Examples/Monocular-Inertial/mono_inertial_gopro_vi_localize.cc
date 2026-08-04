@@ -3,7 +3,8 @@
  *
  * Loads a pre-built atlas (via System.LoadAtlasFromFile in the settings YAML)
  * and runs ORB-SLAM3 in localization-only mode against a GoPro mp4 + telemetry
- * JSON. Writes the per-frame trajectory in EuRoC format to a caller-specified
+ * JSON. Writes the per-frame trajectory as CSV (SaveTrajectoryCSV: one row per
+ * frame fed, with frame_idx and an explicit is_lost column) to a caller-specified
  * path so downstream tooling can pick it up without scraping cwd.
  *
  * Usage:

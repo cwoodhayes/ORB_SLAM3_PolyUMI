@@ -103,7 +103,15 @@ int main(int argc, char **argv) {
   // Main loop
   int cnt_empty_frame = 0;
   int img_id = 0;
+  // CAP_PROP_FPS reports 0 (or NaN) for containers OpenCV can't get a rate out of.
+  // Unguarded that makes frame_diff_s inf/NaN, and the usleep() below then either
+  // hangs the run or is skipped entirely -- so fall back to the GoPro's nominal 60.
   double fps = cap.get(cv::CAP_PROP_FPS);
+  if (!(fps > 1e-6)) {  // NaN-safe: a NaN fps fails this and takes the fallback
+    cerr << "CAP_PROP_FPS reported " << fps << "; falling back to 60 fps for loop pacing"
+         << endl;
+    fps = 60.0;
+  }
   // Spacing between the frames we actually feed, not between source frames --
   // this paces the loop against wall clock below, and decimating widens the
   // real interval by the stride.  Getting this wrong would under-sleep and
@@ -195,7 +203,7 @@ int main(int argc, char **argv) {
   SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
 
   if (argc == 6) {
-    cout << "Saving EuRoC trajectory to: " << argv[5] << endl;
+    cout << "Saving CSV trajectory to: " << argv[5] << endl;
     // Camera-frame CSV, matching the localizer -- see mono_inertial_gopro_vi_localize.cc.
     SLAM.SaveTrajectoryCSV(argv[5]);
   }
