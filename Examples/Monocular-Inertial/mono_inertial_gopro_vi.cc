@@ -31,6 +31,8 @@
 
 #include <json.h>
 
+#include "gripper_mask.h"
+
 using namespace std;
 using nlohmann::json;
 const double MS_TO_S = 1e-3; ///< Milliseconds to second conversion
@@ -90,48 +92,6 @@ bool LoadTelemetry(const string &path_to_telemetry_file,
     return true;
 }
 
-void draw_gripper_mask(cv::Mat &img){
-  // arguments
-  double height = 0.37;
-  double top_width = 0.25;
-  double bottom_width = 1.4;
-
-  // image size
-  double img_h = img.rows;
-  double img_w = img.cols;
-
-  // calculate coordinates
-  double top_y = 1. - height;
-  double bottom_y = 1.;
-  double width = img_w / img_h;
-  double middle_x = width / 2.;
-  double top_left_x = middle_x - top_width / 2.;
-  double top_right_x = middle_x + top_width / 2.;
-  double bottom_left_x = middle_x - bottom_width / 2.;
-  double bottom_right_x = middle_x + bottom_width / 2.;
-
-  top_y *= img_h;
-  bottom_y *= img_h;
-  top_left_x *= img_h;
-  top_right_x *= img_h;
-  bottom_left_x *= img_h;
-  bottom_right_x *= img_h;
-
-  // create polygon points for opencv API
-  std::vector<cv::Point> points;
-  points.emplace_back(bottom_left_x, bottom_y);
-  points.emplace_back(top_left_x, top_y);
-  points.emplace_back(top_right_x, top_y);
-  points.emplace_back(bottom_right_x, bottom_y);
-
-  std::vector<std::vector<cv::Point> > polygons;
-  polygons.push_back(points);
-
-  // draw
-  cv::fillPoly(img, polygons, cv::Scalar(0));
-}
-
-
 int main(int argc, char **argv) {
   if (argc != 5) {
     cerr << endl
@@ -152,6 +112,7 @@ int main(int argc, char **argv) {
      exit(-1);
   }
   cv::Size img_size(fsSettings["Camera.width"],fsSettings["Camera.height"]);
+  cv::Mat slam_mask = LoadSlamMask(fsSettings, img_size);
   fsSettings.release();
 
   // Retrieve paths to images
@@ -203,7 +164,7 @@ int main(int argc, char **argv) {
       ++img_id;
 
       cv::resize(im_track, im_track, img_size);
-      draw_gripper_mask(im_track);
+      ApplySlamMask(im_track, slam_mask);
 
       // gather imu measurements between frames
       // Load imu measurements from previous frame

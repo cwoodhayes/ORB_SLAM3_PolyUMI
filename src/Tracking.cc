@@ -2162,7 +2162,11 @@ void Tracking::MonocularInitialization()
     }
     else
     {
-        if (((int)mCurrentFrame.mvKeys.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>0.3)))
+        // Upstream ORB-SLAM3's 1.0 s window.  63f2213 narrowed this to 0.3 s, which gives
+        // the initializer ~18 frames to find enough parallax for a two-view reconstruction
+        // -- too few at hand-held mapping speeds.  Reverted alongside the gripper mask;
+        // both were starving init of usable parallax.
+        if (((int)mCurrentFrame.mvKeys.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
         {
             mbReadyToInitializate = false;
             std::cout << "Failed to init: n_keypoints " << (int)mCurrentFrame.mvKeys.size() << " time_since_init_frame" << mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp << std::endl;

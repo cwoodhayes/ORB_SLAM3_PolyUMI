@@ -31,6 +31,8 @@
 
 #include <json.h>
 
+#include "gripper_mask.h"
+
 using namespace std;
 using nlohmann::json;
 const double MS_TO_S = 1e-3; ///< Milliseconds to second conversion
@@ -62,6 +64,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   cv::Size img_size(fsSettings["Camera.width"],fsSettings["Camera.height"]);
+  cv::Mat slam_mask = LoadSlamMask(fsSettings, img_size);
   bool bUseViewer = true;
   cv::FileNode fnViewer = fsSettings["System.Viewer"];
   if (!fnViewer.empty()) {
@@ -138,6 +141,7 @@ int main(int argc, char **argv) {
       ++img_id;
 
       cv::resize(im_track, im_track, img_size);
+      ApplySlamMask(im_track, slam_mask);
 
       // gather imu measurements between frames
       // Load imu measurements from previous frame

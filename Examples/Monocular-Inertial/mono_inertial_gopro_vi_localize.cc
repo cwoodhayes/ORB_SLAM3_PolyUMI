@@ -49,6 +49,8 @@
 
 #include <json.h>
 
+#include "gripper_mask.h"
+
 using namespace std;
 using nlohmann::json;
 const double MS_TO_S = 1e-3;
@@ -171,7 +173,7 @@ static long StreamForwardPass(const char *vocab, const char *settings,
                               int frame_stride, const vector<double> &imuTs,
                               const vector<cv::Point3f> &acc,
                               const vector<cv::Point3f> &gyr,
-                              const string &traj_out) {
+                              const string &traj_out, const cv::Mat &slam_mask) {
   cv::VideoCapture cap(video);
   if (!cap.isOpened()) {
     cerr << "Error opening video stream or file: " << video << endl;
@@ -192,6 +194,7 @@ static long StreamForwardPass(const char *vocab, const char *settings,
     cnt_empty_frame = 0;
     const double tframe = clock.Next(cap.get(cv::CAP_PROP_POS_MSEC) * MS_TO_S);
     cv::resize(im, resized, img_size);
+    ApplySlamMask(resized, slam_mask);
     pass.Feed(resized, tframe);
     SkipStrideFrames(cap, frame_stride);
   }
@@ -210,7 +213,8 @@ static long StreamForwardPass(const char *vocab, const char *settings,
 // the reverse sweep must revisit the same frames and re-decoding (or an ffmpeg
 // re-encode) would cost more than the RAM.
 static bool DecodeAllFrames(const char *video, cv::Size img_size, int frame_stride,
-                            vector<cv::Mat> &frames, vector<double> &frameTimes) {
+                            vector<cv::Mat> &frames, vector<double> &frameTimes,
+                            const cv::Mat &slam_mask) {
   cv::VideoCapture cap(video);
   if (!cap.isOpened()) {
     cerr << "Error opening video stream or file: " << video << endl;
@@ -229,6 +233,7 @@ static bool DecodeAllFrames(const char *video, cv::Size img_size, int frame_stri
     const double tframe = clock.Next(cap.get(cv::CAP_PROP_POS_MSEC) * MS_TO_S);
     cv::Mat resized;
     cv::resize(im, resized, img_size);
+    ApplySlamMask(resized, slam_mask);
     frames.push_back(std::move(resized));
     frameTimes.push_back(tframe);
     SkipStrideFrames(cap, frame_stride);
@@ -285,6 +290,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   cv::Size img_size(fsSettings["Camera.width"], fsSettings["Camera.height"]);
+  cv::Mat slam_mask = LoadSlamMask(fsSettings, img_size);
   fsSettings.release();
 
   // Optional temporal decimation, for tuning experiments only: keep every Nth
@@ -312,7 +318,7 @@ int main(int argc, char **argv) {
   // episode.
   if (!do_reverse) {
     return StreamForwardPass(argv[1], argv[2], argv[3], img_size, frame_stride,
-                             imuTimestamps, vAcc, vGyr, traj_out) < 0
+                             imuTimestamps, vAcc, vGyr, traj_out, slam_mask) < 0
                ? 1
                : 0;
   }
@@ -322,7 +328,7 @@ int main(int argc, char **argv) {
   // resolution (img_size), which is the only thing bounding the memory here.
   vector<cv::Mat> frames;
   vector<double> frameTimes;
-  if (!DecodeAllFrames(argv[3], img_size, frame_stride, frames, frameTimes)) return 1;
+  if (!DecodeAllFrames(argv[3], img_size, frame_stride, frames, frameTimes, slam_mask)) return 1;
   if (frames.size() < 2) {
     cerr << "Decoded fewer than 2 frames from " << argv[3] << endl;
     return 1;
