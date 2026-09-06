@@ -152,11 +152,39 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         }
 
         // mpAtlas->CreateNewMap();
-        // when loading a file from disk, we want to localize
+        // when loading a file from disk, we want to localize.
+        //
+        // Activate the map holding the keyframes, NOT simply the lowest-numbered one.
+        // GetAllMaps() sorts by map id, and the id of the map that carries the session's
+        // keyframes is an accident of how mapping went: a tracking loss deep enough into a
+        // mature map makes ORB-SLAM3 branch a fresh map rather than reset in place, so the
+        // survivor can be id 1 while an empty id 0 remains. Taking element 0 then activates an
+        // empty map and every subsequent relocalization searches nothing -- silently, with the
+        // whole scene localizing at 0% and no error anywhere. Pick by keyframe count, which is
+        // what SaveTrajectoryCSV already does when it selects pBiggerMap.
         vector<Map*> map_vector = mpAtlas->GetAllMaps();
-        mpAtlas->ChangeMap(map_vector.at(0));
+        Map* pLoadedMap = nullptr;
+        size_t nMaxKFs = 0;
+        for(Map* pMap : map_vector)
+        {
+            const size_t nKFs = pMap->GetAllKeyFrames().size();
+            cout << "  Loaded map " << pMap->GetId() << " has " << nKFs << " KFs" << endl;
+            if(!pLoadedMap || nKFs > nMaxKFs)
+            {
+                nMaxKFs = nKFs;
+                pLoadedMap = pMap;
+            }
+        }
+        if(!pLoadedMap || nMaxKFs == 0)
+        {
+            cout << "Error: the loaded atlas contains no map with any keyframes; nothing to "
+                    "localize against. Rebuild the map for this scene." << endl;
+            exit(-1);
+        }
+        mpAtlas->ChangeMap(pLoadedMap);
         Map* pCurrentMap = mpAtlas->GetCurrentMap();
-        cout << "Atlas loaded!" << endl;
+        cout << "Atlas loaded! Active map " << pCurrentMap->GetId() << " with " << nMaxKFs
+             << " KFs" << endl;
     }
 
     if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR || mSensor==IMU_RGBD)
