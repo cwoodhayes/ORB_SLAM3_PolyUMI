@@ -1,9 +1,7 @@
-# Build ORB-SLAM3 and the four third-party dependencies it needs, all in-tree.
-#
-# Order matters. DBoW2 and g2o are linked from Thirdparty/, Sophus is header-only, and Pangolin
-# has to exist before ORB-SLAM3 configures: the final cmake points find_package(Pangolin) at the
-# build tree produced here rather than at a system install, so nothing extra has to be set up.
-# The vocabulary is also unpacked on the way through.
+# Build ORB-SLAM3 and its dependencies in-tree: DBoW2, g2o, Sophus and Pangolin under
+# Thirdparty/, then the vocabulary, then ORB-SLAM3 itself. The final cmake points
+# find_package(Pangolin) at the build tree produced here rather than at a system install, so
+# nothing extra has to be set up.
 #
 # Job count defaults to 2 because an unbounded `make -j` exhausts RAM on g2o's and Pangolin's
 # heavier translation units. Raise it on a machine with memory to spare:
