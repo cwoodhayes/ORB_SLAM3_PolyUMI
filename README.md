@@ -3,6 +3,8 @@
 - Added new localization & mapping executables in `Examples/Monocular-Inertial`
 - Added calibration file for GoPro Hero 12 + Max Lens Mod 2.0, created using [OpenIMUCameraCalibrator](https://github.com/urbste/OpenImuCameraCalibrator)
 - Fixed a few crash-causing bugs in the library itself
+- On atlas load, activate the map that actually holds the keyframes rather than the
+  lowest-numbered one, which can be an empty map left behind by a tracking loss and makes every subsequent relocalization fail silently
 - Improved masking for gripper (per-pixel with PNG mask)
 
 ### V1.0, December 22th, 2021
